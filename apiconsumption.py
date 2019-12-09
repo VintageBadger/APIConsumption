@@ -25,11 +25,32 @@ def validRoute(route):
         print("Error occurred while verifying route name.")
         print(ex, ex.with_traceback)
 
+def validDirection(routeInfo, direction):
+    try:
+        key = {
+            "south": 1,
+            "east": 2,
+            "west": 3,
+            "north": 4
+        }
+        routeNum = routeInfo['Route']
+        response = requests.get('https://svc.metrotransit.org/NexTrip/Directions/{0}?format=json'.format(routeNum))
+        #response consists of key-value pairs
+        print(response.content)
+        if response.status_code == 200:
+            for pair in response.json():
+                if int(key[direction]) == int(pair['Value']):
+                    return pair
 
+        return None
+    except Exception as ex:
+        print("Error occurred while verifying direction")
+        print(ex, ex.with_traceback)
 
 if __name__ == '__main__':
     #expecting 3 args
     #Bus Route, Bus Stop Name, Direction
+    # “METRO Blue Line” “Target Field Station Platform 1” “south”
     parser = argparse.ArgumentParser()
     parser.add_argument("route", help="string of route name")
     parser.add_argument("stopName", help="string of stop name")
@@ -43,10 +64,12 @@ if __name__ == '__main__':
         sys.exit()
 
     #TODO need to check if direction is valid for this route
-    
+    directionInfo = validDirection(routeInfo, args.direction)
+    if directionInfo is None:
+        print("{0} is not a valid direction for {1}".format(args.direction, args.route))
 
     #TODO need to check if stopName entered is a valid option
-
+    
 
     print(args.route + " " + args.stopName + " " + args.direction)
     findTimeRemaining(args.route, args.stopName, args.direction)
