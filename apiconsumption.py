@@ -1,16 +1,29 @@
 import argparse
 import requests
+import sys
+import xml.etree.ElementTree as ET
 
-def lookup(route, stopName, direction):
+def findTimeRemaining(route, stopName, direction):
+    pass
+
+#
+#Takes route input and check if route is a valid route
+#
+def validRoute(route):
     try:
-        r = requests.get('http://svc-api:47101/api/Routes')
-        if r.status_code == 200:
-            print(r.json())
+        response = requests.get('https://svc.metrotransit.org/NexTrip/Routes?format=json')
+        if response.status_code == 200:
+            possible_routes = response.json()
+            for pos in possible_routes:
+                if route.upper() in pos['Description'].upper():
+                    print(pos)
+                    return pos
+
+        print(response.status_code)
+        return None
     except Exception as ex:
-        print(ex)
-
-
-
+        print("Error occurred while verifying route name.")
+        print(ex, ex.with_traceback)
 
 
 
@@ -23,7 +36,19 @@ if __name__ == '__main__':
     parser.add_argument("direction", help="string of bus direction")
     args = parser.parse_args()
 
+    #TODO check if route entered is a valid option
+    routeInfo = validRoute(args.route)
+    if routeInfo is None:
+        print("{0} is not a valid route".format(args.route))
+        sys.exit()
+
+    #TODO need to check if direction is valid for this route
+    
+
+    #TODO need to check if stopName entered is a valid option
+
+
     print(args.route + " " + args.stopName + " " + args.direction)
-    lookup(args.route, args.stopName, args.direction)
-    #return time in minutes
+    findTimeRemaining(args.route, args.stopName, args.direction)
+    #TODO return time in minutes
     print("return not functional yet")
