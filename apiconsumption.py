@@ -2,9 +2,8 @@ import argparse
 import requests
 import sys
 import xml.etree.ElementTree as ET
+import datetime
 
-def findTimeRemaining(route, stopName, direction):
-    pass
 
 #
 #Takes route input and check if route is a valid route
@@ -59,6 +58,26 @@ def validStop(routeInfo, directionInfo, stopName):
         print("Error occurred while verifying stop")
         print(ex, ex.with_traceback)
 
+def findTimeRemaining(routeInfo, directionInfo, stopInfo):
+    try:
+        routeNum = routeInfo['Route']
+        directionNum = directionInfo['Value']
+        stopNum = stopInfo['Value']
+        print(routeNum, directionNum, stopNum)
+        response = requests.get('https://svc.metrotransit.org/NexTrip/{0}/{1}/{2}?format=json'.format(routeNum, directionNum, stopNum))
+        #print(response.content)
+        if (response.status_code == 200) and (response.content is not None):
+            busTime = response.json()[1]['DepartureTime']
+            print(response.json()[1])
+            print(busTime)
+            
+            #we have a date time, need to convert and calc time difference
+
+    except Exception as ex:
+        print("Error occurred while verifying time remaining")
+        print(ex, ex.with_traceback)
+
+
 if __name__ == '__main__':
     #expecting 3 args
     #Bus Route, Bus Stop Name, Direction
@@ -91,6 +110,6 @@ if __name__ == '__main__':
 
     print(args.route + " " + args.stopName + " " + args.direction)
     timeInfo = findTimeRemaining(routeInfo, directionInfo, stopInfo)
-    print(timeInfo)
+    #print(timeInfo)
     #TODO return time in minutes
     print("return not functional yet")
