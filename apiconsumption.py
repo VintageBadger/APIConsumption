@@ -16,10 +16,8 @@ def validRoute(route):
             possible_routes = response.json()
             for pos in possible_routes:
                 if route.upper() in pos['Description'].upper():
-                    print(pos)
+                    #print(pos)
                     return pos
-
-        print(response.status_code)
         return None
     except Exception as ex:
         print("Error occurred while verifying route name.")
@@ -36,15 +34,29 @@ def validDirection(routeInfo, direction):
         routeNum = routeInfo['Route']
         response = requests.get('https://svc.metrotransit.org/NexTrip/Directions/{0}?format=json'.format(routeNum))
         #response consists of key-value pairs
-        print(response.content)
+        #print(response.content)
         if response.status_code == 200:
             for pair in response.json():
                 if int(key[direction]) == int(pair['Value']):
                     return pair
-
         return None
     except Exception as ex:
         print("Error occurred while verifying direction")
+        print(ex, ex.with_traceback)
+
+def validStop(routeInfo, directionInfo, stopName):
+    try:
+        routeNum = routeInfo['Route']
+        directionNum = directionInfo['Value']
+        response = requests.get('https://svc.metrotransit.org/NexTrip/Stops/{0}/{1}?format=json'.format(routeNum, directionNum))
+        #print(response.content)
+        if response.status_code == 200:
+            for pair in response.json():
+                if stopName.upper() in pair['Text'].upper():
+                    return pair
+        return None
+    except Exception as ex:
+        print("Error occurred while verifying stop")
         print(ex, ex.with_traceback)
 
 if __name__ == '__main__':
@@ -57,21 +69,28 @@ if __name__ == '__main__':
     parser.add_argument("direction", help="string of bus direction")
     args = parser.parse_args()
 
-    #TODO check if route entered is a valid option
+    #check if route entered is a valid option
     routeInfo = validRoute(args.route)
     if routeInfo is None:
         print("{0} is not a valid route".format(args.route))
         sys.exit()
 
-    #TODO need to check if direction is valid for this route
+    #check if direction is valid for this route
     directionInfo = validDirection(routeInfo, args.direction)
     if directionInfo is None:
         print("{0} is not a valid direction for {1}".format(args.direction, args.route))
+        sys.exit()
 
     #TODO need to check if stopName entered is a valid option
+    stopInfo = validStop(routeInfo, directionInfo, args.stopName)
+    if stopInfo is None:
+        print("{0} is not a valid stop for {1} {2}".format(args.stopName, args.route, args.direction))
+        sys.exit()
+
     
 
     print(args.route + " " + args.stopName + " " + args.direction)
-    findTimeRemaining(args.route, args.stopName, args.direction)
+    timeInfo = findTimeRemaining(routeInfo, directionInfo, stopInfo)
+    print(timeInfo)
     #TODO return time in minutes
     print("return not functional yet")
