@@ -2,7 +2,7 @@ import argparse
 import requests
 import sys
 import xml.etree.ElementTree as ET
-import datetime
+import time
 
 
 #
@@ -63,16 +63,24 @@ def findTimeRemaining(routeInfo, directionInfo, stopInfo):
         routeNum = routeInfo['Route']
         directionNum = directionInfo['Value']
         stopNum = stopInfo['Value']
-        print(routeNum, directionNum, stopNum)
+        #print(routeNum, directionNum, stopNum)
         response = requests.get('https://svc.metrotransit.org/NexTrip/{0}/{1}/{2}?format=json'.format(routeNum, directionNum, stopNum))
         #print(response.content)
         if (response.status_code == 200) and (response.content is not None):
             busTime = response.json()[1]['DepartureTime']
-            print(response.json()[1])
-            print(busTime)
-            
-            #we have a date time, need to convert and calc time difference
+            busTime = busTime.replace("/Date(", "")
+            busTime = busTime.replace("-0600)/", "")
+            busTime = time.gmtime(float(str(busTime)[:-3]+'.'+str(busTime)[-3:]))
+            #print(busTime)
+            currTime = time.gmtime()
+            #print(currTime)
 
+            waitTime = {
+                "Hour": busTime.tm_hour - currTime.tm_hour,
+                "Minute": busTime.tm_min - currTime.tm_min
+            }
+            #print(waitTime)
+            return waitTime
     except Exception as ex:
         print("Error occurred while verifying time remaining")
         print(ex, ex.with_traceback)
@@ -100,7 +108,7 @@ if __name__ == '__main__':
         print("{0} is not a valid direction for {1}".format(args.direction, args.route))
         sys.exit()
 
-    #TODO need to check if stopName entered is a valid option
+    #check if stopName entered is a valid option
     stopInfo = validStop(routeInfo, directionInfo, args.stopName)
     if stopInfo is None:
         print("{0} is not a valid stop for {1} {2}".format(args.stopName, args.route, args.direction))
@@ -108,8 +116,11 @@ if __name__ == '__main__':
 
     
 
-    print(args.route + " " + args.stopName + " " + args.direction)
+    #print(args.route + " " + args.stopName + " " + args.direction)
     timeInfo = findTimeRemaining(routeInfo, directionInfo, stopInfo)
     #print(timeInfo)
     #TODO return time in minutes
-    print("return not functional yet")
+    if(timeInfo['Hour'] > 0):
+        print("{0} Hour(s) {1} Minute(s)").format(timeInfo['Hour'], timeInfo['Minute'])
+    else:
+        print("{0} Minute(s)".format(timeInfo['Minute']))
